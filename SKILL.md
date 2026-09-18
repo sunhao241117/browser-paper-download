@@ -125,6 +125,57 @@ bu.wait_for_load(timeout=15); time.sleep(5)
 rec = bu.download(bu.current_tab()["url"], filename="x.pdf")  # now works
 ```
 
+**PMC download playbook (verified in production, 192 papers downloaded)**:
+
+The PMC route is the most reliable batch in the entire workflow (~95% success rate, 20–30 s/paper). Use the **bu plane** exclusively — PMC is open access, no institutional cookies needed, and bu is faster with no coordinate guessing.
+
+*Correct per-paper flow (bu plane):*
+```python
+import seed_browser_use as bu, os, shutil, time
+
+DST = r"C:\...\target"
+for pmid, pmcid in pmc_queue:
+    dst = os.path.join(DST, f"PMID_{pmid}.pdf")
+    if os.path.exists(dst):
+        continue  # skip already downloaded
+    article_url = f"https://pmc.ncbi.nlm.nih.gov/articles/{pmcid}/"
+    bu.navigate(article_url)
+    bu.wait_for_load(timeout=15)
+    time.sleep(5)
+    # Find and click "Download PDF" button on the article page
+    refs = bu.find("Download PDF")
+    if refs:
+        bu.click(refs[0])
+        rec = bu.wait_for_download(timeout=30)
+        path = rec.get("path", "")
+        if path and os.path.exists(path):
+            with open(path, "rb") as f:
+                if f.read(5) == b"%PDF-":  # ALWAYS verify magic bytes
+                    shutil.move(path, dst)
+                    continue
+    # If no Download PDF button or download failed, mark and move on
+    print(f"  SKIP {pmid} ({pmcid}): no Download PDF button or download failed")
+```
+
+*Key pitfalls learned in production:*
+1. **Never `bu.download(pmc_pdf_url)` directly** — returns HTML bot-wall (403). Must navigate the article page first, then click the "Download PDF" button.
+2. **Always verify `%PDF-` magic bytes** — HTML error pages can have a `.pdf` extension. Bad files must be deleted, not saved.
+3. **11 papers had no "Download PDF" button** — these are typically author manuscripts (Blood/JAMA records) or records with only HTML. Skip them and fall back to the publisher route.
+4. **Old PMC records load slowly** — occasionally need 40 s or a second attempt on first hit. If `wait_for_download` times out, retry once.
+5. **Use bu plane, not cu plane** — cu is slower, requires coordinate guessing, and is unnecessary for open-access PMC. Reserve cu for paywalled publishers.
+6. **PMC is the first batch to run** — process all PMC papers before any paywalled publisher. They build momentum and don't trigger anti-bot systems.
+
+*PMC vs paywalled publisher comparison:*
+
+| Dimension | PMC (bu plane) | ScienceDirect (cu plane) |
+|-----------|-----------------|--------------------------|
+| Success rate | ~95% | ~60% (anti-bot affected) |
+| Speed | 20–30 s/paper | 40–60 s/paper |
+| Institutional access | Not needed | Required (Zhengzhou Univ) |
+| Anti-bot | Essentially none | Cloudflare + rate limiting |
+| Save method | `bu.download()` direct | Must Ctrl+S "另存为" |
+| Plane | bu (fast, no coords) | cu (real Edge, coords needed) |
+
 **ScienceDirect fast path** (after one CF pass): `pdfft` direct URL is unreliable (stalls on "Preparing to download"). Always go article page → click "View PDF" → switch to `pdf.sciencedirectassets.com` tab → `bu.download(current_url)`. The signed S3 URL is valid for 300 s; download immediately.
 
 **Cloudflare strategy for speed**:
@@ -153,6 +204,96 @@ rec = bu.download(bu.current_tab()["url"], filename="x.pdf")  # now works
 - **Skip already-downloaded papers.** Check os.path.exists(dst) before each paper — critical for resumability after interruptions.
 - **DOI list may have BOM on first line.** Strip \ufeff when reading the input file.
 - **NCBI esearch is near-100% for DOI→PMID; idconv is ~25%.** Always use esearch for DOI-only inputs (see section 1).
+
+**Non-PMC publisher download playbook (verified in production, ~35 papers downloaded):**
+
+The PubMed → publisher → Ctrl+S route is the most reliable for paywalled non-PMC papers. Use the **cu plane** exclusively — it carries the user's real Edge profile + institutional cookies (Zhengzhou University CARSI).
+
+*Correct per-paper flow (cu plane):*
+```python
+import seed_computer_use as cu, os, shutil, time
+
+DST = r"C:\...\target"
+DL = os.path.join(os.environ["USERPROFILE"], "Downloads")
+for pmid in queue:
+    dst = os.path.join(DST, f"PMID_{pmid}.pdf")
+    if os.path.exists(dst):
+        continue  # skip already downloaded
+
+    # 1. Navigate to PubMed article page in the SAME tab
+    cu.click(300, 60); cu.hotkey("ctrl", "a")
+    cu.type(f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/")
+    cu.hotkey("enter"); time.sleep(12)
+    cu.screenshot()
+
+    # 2. Click the publisher full-text link on the right sidebar
+    #    (ELSEVIER FULL-TEXT ARTICLE / WILEY Full Text / SPRINGERLINK / etc.)
+    cu.click(750, 560); time.sleep(15)  # adjust based on screenshot
+    cu.screenshot()
+
+    # 3. Handle Cloudflare Turnstile if it appears
+    if "请验证您是真人" in page_text:
+        cu.click(225, 455); time.sleep(15)  # CF checkbox ~(225, 455)
+
+    # 4. For ScienceDirect: confirm "Brought to you by: Zhengzhou University"
+    #    Then click "View PDF" OR navigate directly to PDF URL:
+    #    https://www.sciencedirect.com/science/article/pii/{PII}/pdf
+    cu.click(315, 445); time.sleep(20)  # View PDF button
+    cu.screenshot()
+
+    # 5. Once PDF is open in Edge viewer, Ctrl+S to save
+    cu.hotkey("ctrl", "s"); time.sleep(5)
+    cu.screenshot()  # confirm "另存为" dialog appeared
+
+    # 6. Rename file in dialog: tmp_{pmid}.pdf, then click 保存(S)
+    cu.click(150, 495); cu.hotkey("ctrl", "a")
+    cu.type(f"tmp_{pmid}.pdf")
+    cu.click(660, 585); time.sleep(15)  # 保存 button ~(660, 585)
+
+    # 7. Verify %PDF- magic bytes, then move to destination
+    pdf_file = os.path.join(DL, f"tmp_{pmid}.pdf")
+    if os.path.exists(pdf_file):
+        with open(pdf_file, "rb") as f:
+            if f.read(5) == b"%PDF-":
+                shutil.move(pdf_file, dst)
+                print(f"  OK: {pmid} ({os.path.getsize(dst)//1024} KB)")
+                continue
+    print(f"  SKIP {pmid}: no valid PDF")
+```
+
+*Key pitfalls learned in production:*
+1. **PubMed entry point is preferred** — navigate to PubMed first, click the publisher link, rather than going directly to the publisher URL. This carries the correct referrer and avoids rate-limiting.
+2. **Always use the same tab** — do not open new tabs for each paper. This preserves the session and avoids Scholarscope-style extension redirects.
+3. **ScienceDirect rate limiting**: after ~10 consecutive SD papers, the "View PDF" button turns gray. Solution: refresh the page, or navigate directly to `https://www.sciencedirect.com/science/article/pii/{PII}/pdf` to bypass.
+4. **JACC (jacc.org) special case**: Ctrl+S saves HTML, not PDF. Must click the download icon in the top-right toolbar instead.
+5. **Cloudflare verification**: click the checkbox at ~(225, 455), wait 10-15 seconds. One pass per domain sets the cookie for subsequent papers.
+6. **No-access triage**: if the page shows "Purchase PDF", "Get Access", "Subscribe", or only "Article preview" → skip immediately. Do not waste time trying.
+7. **PMCID papers go through PMC route** (section 3.5) — they are more reliable and faster.
+8. **Save dialog filename**: the pre-filled name varies by publisher. Always overwrite it with `tmp_{pmid}.pdf` before clicking save.
+9. **PDF must be fully loaded before Ctrl+S** — confirm the page shows a PDF viewer (page counter "1 / N" + toolbar) before saving. Saving from the article page produces HTML.
+10. **Verify file extension**: the save dialog's "保存类型" must show "WPS PDF 文档 (*.pdf)" or "PDF (*.pdf)". If it says "网页，全部 (*.htm;*.html)", you're on an article page, not a PDF viewer.
+
+*Verified journal access patterns (Zhengzhou University):*
+
+| Journal | Access | Download method |
+|---|---|---|
+| J Ethnopharmacol | Institutional ✓ | View PDF button → Ctrl+S |
+| Biochem Pharmacol | Institutional ✓ | View PDF button → Ctrl+S |
+| Cell Signal | OA ✓ | View PDF button → Ctrl+S |
+| Curr Opin Immunol | Institutional ✓ | View PDF button → Ctrl+S |
+| Brain Behav Immun | Institutional ✓ | View PDF button → Ctrl+S |
+| Autoimmun Rev | Institutional ✓ | View PDF button → Ctrl+S |
+| J Invest Dermatol | OA ✓ | Download PDF button → Ctrl+S |
+| JACC Cardiovasc Interv | OA ✓ | PDF button → **download icon** (not Ctrl+S) |
+| Toxins (MDPI) | OA ✓ | PMC route → Ctrl+S |
+| Pediatr Radiol | OA ✓ | PMC route → Ctrl+S |
+| Nurs Open | OA ✓ | PMC route → Ctrl+S |
+| JMIR | OA ✓ | PMC route → Ctrl+S |
+| Free Radic Biol Med (2024+) | ✗ No access | Only "Article preview" → skip |
+| J Urol | ✗ No access | "No Access" → skip |
+| Int J Cardiol | ✗ No access | "Get Access" → skip |
+| Curr Protoc (Wiley) | ✗ No access | "Get access to full version" → skip |
+| Radiol Technol | ✗ No full text | No full-text links on PubMed → skip |
 
 ### 3.6 Fallback: Scholarscope + Sci-Hub route (cu plane, verified)
 
