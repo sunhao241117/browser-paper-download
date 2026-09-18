@@ -21,7 +21,15 @@ No AppleScript on Windows. Use a desktop-automation plane (e.g. `seed_computer_u
 5. For an **article page**, find and click its "View PDF"/"PDF下载" button (positions shift; re-screenshot to locate), then handle any Turnstile (see antibot_playbook) or save from the viewer.
 6. Between papers, list `Downloads` with a file tool (not inside the browser cell) to confirm `%PDF-` files; move each into the dest folder with `PMID_<id>.pdf` naming, then run `rename_papers.py` once at the end.
 
-Desktop-coordinate notes (1920×1080): address bar ~(300,60); Edge viewer page counter ~(500,95); Save dialog 保存 ~(530,475); SD article "View PDF" button moves as the page re-lays-out — always re-screenshot before clicking.
+Desktop-coordinate notes (1920×1080): address bar ~(300,60); Edge viewer page counter ~(500,95); Save dialog 保存 ~(650,585); SD article "View PDF" button moves as the page re-lays-out — always re-screenshot before clicking.
+
+**cu-plane hard rules (learned in production):**
+- `cu.click()` / `cu.type()` MUST be preceded by `cu.screenshot()` in the same call chain, otherwise `CU_INVALID_ACTION`. Every cell that sends pointer input must first observe the screen.
+- Coordinates are 0–1000 normalized over the WHOLE screen, not the viewport. Re-derive from a fresh screenshot after any scroll, navigation, or dialog.
+- The "另存为" dialog's 保存 button drifts per paper (~650,585 ±20); always screenshot-OCR before clicking, never hardcode.
+- `cu` state does NOT survive between calls — anything needed later (file path, count) must be written to disk or printed to stdout.
+- `wayf.springernature.com` institution autocomplete input: `cu.type()` works intermittently (sometimes succeeds, sometimes the input silently rejects keystrokes). If it fails twice, try `bu` plane for that one step, then return to `cu` for the rest.
+- **CARSI SSO login (e.g. Zhengzhou University `cas.s.zzu.edu.cn`)**: saved credentials may auto-fill; clicking 登录 completes institutional auth. BUT — SSO login success ≠ subscription entitlement. Always return to the article page and confirm a PDF button appears; Springer MIMB chapters often show "Log in via an institution" even after successful SSO because the institution doesn't subscribe to that book.
 
 ## Workflow
 
@@ -66,9 +74,16 @@ The script opens ONE reusable tab, per paper: snapshots `~/Downloads` → sets t
 
 **Order the queue by route** to amortize anti-bot passes: all PMC first, then group by publisher domain.
 
-### 3.5 Fast batch download on Windows (bu plane, verified)
+### 3.5 Fast batch download on Windows (bu + cu planes, verified)
 
-The in-app browser (`bu` plane, `seed_browser_use`) is significantly faster than driving real Edge via `cu` for bulk downloads — no GUI coordinate guessing, no save-dialog clicking, tab switching via refs. Use this as the primary plane; fall back to `cu` only when `bu` hits a wall it cannot pass (e.g. WPS-handled PDF save dialogs on Wiley).
+**Route selection: direct publisher URL > PubMed→DOI link.** Prefer navigating straight to the publisher article page (`onlinelibrary.wiley.com/doi/{doi}`, `iopscience.iop.org/article/{doi}`, `journals.sagepub.com/doi/{doi}`, etc.). The PubMed→DOI route adds a redirect and is only useful when you do not know the publisher URL pattern. Edge carries institutional cookies regardless of entry point, so referrer from PubMed is not required for access detection.
+
+**Plane selection:**
+- `bu` plane (`seed_browser_use`): faster, no coordinate guessing, but has NO institutional cookies — ScienceDirect will always hit Cloudflare. Use for PMC (open access) and publishers without CF.
+- `cu` plane (`seed_computer_use`, real Edge): carries the user full profile + institutional cookies. Required for SD, Wiley, Springer, ACS, IOP, JoVE — any paywalled publisher.
+- Fall back to `cu` whenever `bu` hits a wall it cannot pass (CF, WPS-handled save dialogs, institutional auth).
+
+**Subdomain redirect trap (critical):** A `pdfdirect` or direct-PDF URL may redirect to a *different subdomain* that lacks the institutional entitlement cookie, falsely showing no access. Example: Wiley `pdfdirect/10.1002/jat.4510` redirects to `analyticalsciencejournals.onlinelibrary.wiley.com` which shows Get access — but the canonical article page `onlinelibrary.wiley.com/doi/10.1002/jat.4510` correctly shows Full Access. **Always judge institutional access from the article homepage, never from a redirect landing page.** If a direct-PDF link appears to fail, navigate to the article page and check for a PDF button before declaring no-access.
 
 **Per-paper fast loop (bu plane, ~20–30 s/paper after CF pass):**
 ```python
@@ -123,14 +138,21 @@ rec = bu.download(bu.current_tab()["url"], filename="x.pdf")  # now works
 - **Taylor & Francis** (tandfonline.com): "Purchase options" panel with "PDF download + Online access — USD XX.00" → no access → fall back to Scholarscope+Sci-Hub.
 - **Karger** (karger.com): article page has no PDF/download button at all, only "Get Permissions" → no open PDF → fall back to Scholarscope+Sci-Hub.
 - **NEJM**: "This content is available to subscribers. Subscribe now. Already have an account? Sign in." → paywalled → fall back to Scholarscope+Sci-Hub.
-- Known no-access patterns for Zhengzhou University: Wiley ChemMedChem, ASPET Drug Metab Dispos, AHA Hypertension (some), FASEB Journal (some), Oxford EJE (some), T&F Fetal Pediatr Pathol.
-- Springer articles with no PDF/download control at all → no entitlement → skip.
-- **When no-access is confirmed, immediately try Scholarscope+Sci-Hub (section 3.6) before giving up** — this recovers ~50% of otherwise-unavailable papers.
+- Known no-access patterns for Zhengzhou University: Wiley ChemMedChem, ASPET Drug Metab Dispos, AHA Hypertension (some), FASEB Journal (some), Oxford EJE (some), T&F Fetal Pediatr Pathol, **Springer Methods in Molecular Biology (MIMB) book chapters**, **F&S Science (xfss journal)**, **OUP Endocrinology (2026+ issues)**, **SAGE Int J Surg Pathol**, **CSIRO Reprod Fertil Dev**.
+- Springer articles with no PDF/download control at all → no entitlement → skip. **CARSI SSO login success does NOT mean access** — after logging in via `cas.s.zzu.edu.cn`, return to the article page; if it still shows `Log in via an institution` / `Subscribe and save`, the institution does not subscribe to that title. MIMB chapters are the most common false-positive (SSO works, no PDF button).
+- **When no-access is confirmed, immediately try Scholarscope+Sci-Hub (section 3.6) before giving up** — this recovers ~50% of otherwise-unavailable papers. Note: Sci-Hub has not updated since 2021; papers published 2022+ are usually not available there.
 
 **File hygiene for speed**:
 - Before a batch, clear `C:\Users\sunhao\Downloads\` and `C:\Users\sunhao\Downloads\BrowserUse\` of old PDFs — prevents the watcher from confusing files between papers.
 - Name temp downloads `tmp_<pmid>.pdf`, move to `PMID_<pmid>.pdf` only after `%PDF-` verification. Bad HTML files (header `<!DOC` or `\n\n\n\n<`) must be deleted, not saved.
 - Close extra browser tabs every ~20 papers to keep the browser responsive.
+
+**Batch processing best practices:**
+- **Group by publisher and process in batches.** One Cloudflare/hCaptcha pass sets a cookie that covers all papers on that domain. IOP: pass hCaptcha once, then all IOP papers open directly. ScienceDirect: pass CF once, then all SD papers work.
+- **Always verify %PDF- magic bytes before moving to target.** Downloaded HTML error pages (403, bot walls) often have .pdf extension but start with <!DOCTYPE.
+- **Skip already-downloaded papers.** Check os.path.exists(dst) before each paper — critical for resumability after interruptions.
+- **DOI list may have BOM on first line.** Strip \ufeff when reading the input file.
+- **NCBI esearch is near-100% for DOI→PMID; idconv is ~25%.** Always use esearch for DOI-only inputs (see section 1).
 
 ### 3.6 Fallback: Scholarscope + Sci-Hub route (cu plane, verified)
 
@@ -208,7 +230,12 @@ Check each archived file is a real PDF (`%PDF-` magic, page count). Report per p
 |---|---|---|---|
 | `10.1016/` | ScienceDirect (Elsevier) | Often institutional | article page → View PDF → download from `sciencedirectassets.com` tab |
 | `10.1038/` | Nature | Often OA / institutional | direct `nature.com/articles/{suffix}.pdf` |
-| `10.1002/`, `10.1111/` | Wiley | Mixed; subdomains separate | `pdfdirect/{doi}`; ChemMedChem often no-access |
+| `10.1002/`, `10.1111/` | Wiley | Mixed; subdomains separate | article page first (see subdomain trap), then `pdfdirect/{doi}`; J Appl Toxicol HAS access (Zhengzhou Univ) |
+| `10.1088/` | IOP Publishing (Biomed Mater, Biofabrication, etc.) | Often institutional | `iopscience.iop.org/article/{doi}` → PDF button → Ctrl+S; hCaptcha (image grid, e.g. click plants for spray bottle) one pass unlocks all IOP |
+| `10.3791/` | JoVE (Journal of Visualized Experiments) | Often institutional | `jove.com/video/{id}` → 全文 → 下载PDF; institutional access shown as `Zhengzhou University` banner |
+| `10.1021/` | ACS (ACS Biomater Sci Eng, etc.) | Often institutional | article page → `Open PDF` button → Ctrl+S; page shows `Subscribed` when institution has access |
+| `10.1177/` | SAGE (Int J Surg Pathol, etc.) | Often no institutional | `journals.sagepub.com/doi/{doi}`; `未订阅` lock icon = no access |
+| `10.1071/` | CSIRO Publishing (Reprod Fertil Dev, etc.) | Paywall | `connectsci.au` article page; `Pay-Per-View USD ` = no institutional access |
 | `10.1080/` | Taylor & Francis | Often no institutional | PubMed → "View full text" → CF → "Purchase options" = no access → Scholarscope+Sci-Hub |
 | `10.1007/` | Springer | Mixed; old journals may have none | `link.springer.com/content/pdf/{doi}.pdf`; no PDF button = no entitlement |
 | `10.1161/` | AHA (Hypertension, ATVBA, etc.) | Often no institutional | `ahajournals.org/doi/pdf/{doi}`; "Get Access" = skip |
