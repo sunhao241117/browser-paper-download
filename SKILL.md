@@ -211,6 +211,15 @@ for pmid, pmcid in pmc_queue:
 - **DOI list may have BOM on first line.** Strip \ufeff when reading the input file.
 - **NCBI esearch is near-100% for DOI→PMID; idconv is ~25%.** Always use esearch for DOI-only inputs (see section 1).
 
+**Fully automated batch download principles (user requirement):**
+- **Process PMC papers first, then other journals.** PMC is open access, fastest, highest success rate (~95%). Process all PMC papers before moving to paywalled publishers.
+- **Fully automated, no stopping.** The agent should run continuously through the entire queue without pausing to ask the user for decisions. Make all reasonable decisions autonomously.
+- **Skip paywalled/non-OA papers immediately.** If a paper shows "Purchase PDF", "Get Access", "Subscribe", "No Access", or any paywall indicator → skip immediately and move to the next paper. Do not waste time trying to bypass paywalls or ask the user.
+- **Self-resolve all issues.** Handle cookies popups, Cloudflare checks, login redirects, and minor UI changes autonomously. Only request user takeover for CAPTCHAs or institutional logins that require credentials.
+- **Final summary report.** After processing all PMIDs, output a summary report with: (1) total papers in queue, (2) successfully downloaded count, (3) failed/skipped count, (4) breakdown by reason (no access, no PDF button, download error, etc.).
+- **Resumable by design.** Always check `os.path.exists(dst)` before each paper. If interrupted, restarting the batch will automatically skip already-downloaded papers and continue where it left off.
+- **Pacing and anti-bot.** Process papers one at a time, wait for each download to complete before starting the next. Group papers by publisher domain to amortize anti-bot passes (one Cloudflare check unlocks all papers on that domain).
+
 **Non-PMC publisher download playbook (verified in production, 100+ papers downloaded):**
 
 The PubMed → publisher → Ctrl+S route is the most reliable for paywalled non-PMC papers. Use the **cu plane** exclusively — it carries the user's real Edge profile + institutional cookies (Zhengzhou University CARSI).
@@ -293,6 +302,10 @@ for pmid in queue:
 16. **User preference: Ctrl+S first, Ctrl+P only as fallback** — the user prefers Ctrl+S "Save As" over Ctrl+P "Print to PDF". Only use Ctrl+P when Ctrl+S consistently fails (e.g., on certain PDF viewers where Ctrl+S saves HTML).
 17. **Scholarscope extension interferes** — the Scholarscope browser extension redirects PubMed to its own login page. Disable it before starting bulk downloads, or the PubMed → publisher route will fail.
 18. **ScienceDirect custom PDF viewer quirks** — Ctrl+S on the SD custom viewer (pdf.sciencedirectassets.com) sometimes saves as HTML or shows "network error". When this happens, refresh the PDF page and try again, or fall back to Ctrl+P → Microsoft Print to PDF.
+19. **Page timeout handling** — if the publisher page takes too long to load (ERR_TIMED_OUT / ERR_CONNECTION_TIMED_OUT), refresh the page once. If it still times out after refresh, skip to the next paper immediately. Do not waste time waiting indefinitely.
+20. **Pre-screen paywalled/non-OA journals before clicking** — based on historical experience, if you already know a journal is paywalled and your institution has no access (e.g., AACR, SAGE Publications, certain OUP journals), DO NOT click the full-text link from PubMed. Skip directly to the next paper. This saves significant time by avoiding repeated failed attempts on known inaccessible journals.
+21. **SAGE Publications connection timeout** — journals.sagepub.com consistently times out (ERR_CONNECTION_TIMED_OUT). Skip SAGE journals without attempting to click the link.
+22. **silverchair.com PDF viewer timeout** — OUP's silverchair.com PDF viewer (watermark02.silverchair.com) frequently times out. If the PDF page takes more than 20 seconds to load after Cloudflare verification, skip to the next paper.
 
 *Verified journal access patterns (Zhengzhou University, expanded):*
 
