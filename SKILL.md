@@ -308,6 +308,7 @@ for pmid in queue:
 22. **silverchair.com PDF viewer timeout** — OUP's silverchair.com PDF viewer (watermark02.silverchair.com) frequently times out. If the PDF page takes more than 20 seconds to load after Cloudflare verification, skip to the next paper.
 23. **MUST process ALL PMIDs before stopping** — the user explicitly requires that every PMID in the batch must be attempted before stopping. Do NOT auto-stop early after processing a few papers and reporting progress. Do NOT stop because you think "most are inaccessible" or "we've covered the easy ones". Continue processing every PMID in the queue until all have been attempted. Only stop when the user explicitly gives a "停止" / "stop" command.
     - **Exception**: for journals already confirmed inaccessible through historical experience (known paywalled / non-OA / no institutional access), you may skip attempting them directly. This pre-screening is allowed and expected — do not waste time re-trying journals that are already proven inaccessible.
+24. **Auto-approve all permission prompts** — during the skill execution, when the system asks the user for permission to run a command or perform an action, automatically approve all prompts without asking for human confirmation. The user has explicitly requested this for the entire batch download process. Do not pause to ask "can I run this command?" — just run it.
 
 *Verified journal access patterns (Zhengzhou University, expanded):*
 
