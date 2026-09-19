@@ -310,6 +310,7 @@ for pmid in queue:
     - **Exception**: for journals already confirmed inaccessible through historical experience (known paywalled / non-OA / no institutional access), you may skip attempting them directly. This pre-screening is allowed and expected — do not waste time re-trying journals that are already proven inaccessible.
 24. **Auto-approve all permission prompts** — during the skill execution, when the system asks the user for permission to run a command or perform an action, automatically approve all prompts without asking for human confirmation. The user has explicitly requested this for the entire batch download process. Do not pause to ask "can I run this command?" — just run it.
 25. **Do NOT assume journal access based on publisher alone** — never pre-judge whether a journal is accessible based solely on its publisher name. Even within the same publisher (e.g., Nature, Elsevier, OUP), some journals may be open access, some may be covered by institutional subscription, and some may not. **You must actually attempt each paper before marking it as inaccessible.** Only after you have actually tried and failed to download from a specific journal should you add that journal to the known-inaccessible list for future skipping. This is per-journal, not per-publisher — do not generalize from one journal to an entire publisher. When you confirm a journal is inaccessible, add it to the verified journal access table below immediately.
+26. **Known-inaccessible journal blacklist (verified) — skip immediately** — the following journals have been **actually attempted and confirmed inaccessible** (Zhengzhou University institutional access). When you identify a paper belongs to one of these journals, **DO NOT click the full-text link from PubMed** — skip directly to the next paper. This saves significant time by avoiding repeated failed attempts on proven inaccessible journals. This list is updated in real-time as new journals are verified inaccessible.
 
 *Verified journal access patterns (Zhengzhou University, expanded):*
 
@@ -356,15 +357,35 @@ for pmid in queue:
 | Int J Cardiol | ✗ No access | "Get Access" → skip |
 | Curr Protoc (Wiley) | ✗ No access | "Get access to full version" → skip |
 | Radiol Technol | ✗ No full text | No full-text links on PubMed → skip |
-| J Heart Lung Transplant | ✗ No access | Only "Article preview" → skip |
+| J Heart Lung Transplant (JHLT) | ✗ No access | Only "Article preview" → skip |
 | AJO (ajo.com) | ✗ No access | "Get full text access" → skip |
-| JHLT (jhltonline.org) | ✗ No access | "Get Access" → skip |
 | AACR (aacrjournals.org) | ✗ No access | Redirects to abstract → skip |
+| Blood/ASH 系列 (作者手稿) | ✗ No PDF button | PMC无Download PDF按钮 → skip |
+| SAGE Publications (journals.sagepub.com) | ✗ Connection timeout | Unreachable → skip |
+| J-STAGE | ✗ Page load failure | Unreachable → skip |
 | Military Medicine (OUP) | ✗ No access | "Get access" → skip |
 | J Appl Microbiol (OUP) | ✗ No access | "Get access" → skip |
+| Br J Dermatol (OUP) | ✗ No access | "Get access" → skip |
+| Endocrine Reviews (OUP) | ✗ No access | "Get access" → skip |
+| silverchair.com (OUP PDF viewer) | ✗ Frequent timeout | ERR_TIMED_OUT → skip |
 | PM R (Wiley) | ✗ No access | "Zhengzhou University does not provide access" → skip |
-| SAGE Publications | ✗ Connection timeout | Unreachable → skip |
-| J-STAGE | ✗ Page load failure | Unreachable → skip |
+| JASN (Wolters Kluwer) | ✗ No access | 只有个人订阅登录，无机构访问选项 → skip |
+| ARD (BMJ) | ✗ No access | 需要个人登录 → skip |
+| Chest (Elsevier) | ✗ No PDF button | 机构登录成功但找不到PDF下载按钮 → skip |
+| Nature Medicine | ✗ No access | "Access is not available" → skip |
+| Nature Immunology | ✗ No access | "Access is not available" → skip |
+| Nature Metabolism | ✗ No access | "Access is not available" → skip |
+| Inflammation (Springer) | ✗ No access | 需付费 $39.95 → skip |
+| Springer (部分期刊) | ✗ No access | 需付费 → skip |
+| IEEE Xplore | ✗ PDF download failed | PDF查看器Ctrl+S保存HTML，打印预览失败 → skip |
+| 西班牙期刊 (actasdermo.org) | ✗ PDF viewer incompatible | 在线PDF查看器不兼容，Ctrl+S保存HTML → skip |
+| CORE (core.ac.uk) | ✗ 410 error | FREE PDF链接返回410错误 → skip |
+| JACC (jacc.org) | ⚠️ Special | PDF查看器Ctrl+S保存HTML，需点击右上角下载图标 |
+| AJRCCM 部分非OA文章 | ✗ No access | 部分文章无权限 → skip |
+
+**PMC 无 Download PDF 按钮的文章（已全部验证跳过）：**
+PMC13307560, PMC4911861, PMC4911864, PMC5314813, PMC2713467, PMC2572797, PMC1895193, PMC3031477, PMC2442740, PMC6456995, PMC4285539
+（以上均为Blood/ASH作者手稿记录，PMC页面无Download PDF按钮）
 
 ### 3.6 Fallback: Scholarscope + Sci-Hub route (cu plane, verified)
 
