@@ -306,6 +306,7 @@ for pmid in queue:
 20. **Pre-screen paywalled/non-OA journals before clicking** — based on historical experience, if you already know a journal is paywalled and your institution has no access (e.g., AACR, SAGE Publications, certain OUP journals), DO NOT click the full-text link from PubMed. Skip directly to the next paper. This saves significant time by avoiding repeated failed attempts on known inaccessible journals.
 21. **SAGE Publications connection timeout** — journals.sagepub.com consistently times out (ERR_CONNECTION_TIMED_OUT). Skip SAGE journals without attempting to click the link.
 22. **silverchair.com PDF viewer timeout** — OUP's silverchair.com PDF viewer (watermark02.silverchair.com) frequently times out. If the PDF page takes more than 20 seconds to load after Cloudflare verification, skip to the next paper.
+23. **MUST process ALL PMIDs before stopping** — the user explicitly requires that every PMID in the batch must be attempted before stopping. Do NOT auto-stop early after processing a few papers and reporting progress. Do NOT stop because you think "most are inaccessible" or "we've covered the easy ones". Continue processing every PMID in the queue until all have been attempted. Only stop when the user explicitly gives a "停止" / "stop" command.
 
 *Verified journal access patterns (Zhengzhou University, expanded):*
 
