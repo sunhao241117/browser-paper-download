@@ -165,18 +165,24 @@ for pmid, pmcid in pmc_queue:
 5. **Use bu plane, not cu plane** — cu is slower, requires coordinate guessing, and is unnecessary for open-access PMC. Reserve cu for paywalled publishers.
 6. **PMC is the first batch to run** — process all PMC papers before any paywalled publisher. They build momentum and don't trigger anti-bot systems.
 
-*PMC vs paywalled publisher comparison:*
+*PMC vs paywalled publisher comparison (updated):*
 
 | Dimension | PMC (bu plane) | ScienceDirect (cu plane) |
 |-----------|-----------------|--------------------------|
-| Success rate | ~95% | ~60% (anti-bot affected) |
+| Success rate | ~95% | ~85% (after institutional login) |
 | Speed | 20–30 s/paper | 40–60 s/paper |
-| Institutional access | Not needed | Required (Zhengzhou Univ) |
-| Anti-bot | Essentially none | Cloudflare + rate limiting |
-| Save method | `bu.download()` direct | Must Ctrl+S "另存为" |
+| Institutional access | Not needed | Required (Zhengzhou Univ CARSI) |
+| Anti-bot | Essentially none | Cloudflare (1 pass per domain) + occasional rate limiting |
+| Save method | `bu.download()` direct | Ctrl+S "另存为" (preferred) |
 | Plane | bu (fast, no coords) | cu (real Edge, coords needed) |
+| Papers downloaded | 192 | ~100+ (Cytokine Growth Factor Rev, Int Immunopharmacol, Pancreatology, etc.) |
 
-**ScienceDirect fast path** (after one CF pass): `pdfft` direct URL is unreliable (stalls on "Preparing to download"). Always go article page → click "View PDF" → switch to `pdf.sciencedirectassets.com` tab → `bu.download(current_url)`. The signed S3 URL is valid for 300 s; download immediately.
+**ScienceDirect fast path (cu plane, verified):**
+- **Recommended flow**: PubMed article page → click "ELSEVIER FULL-TEXT ARTICLE" link → confirm "Brought to you by: Zhengzhou University" → click "View PDF" → wait for PDF viewer to fully load (page counter "1 / N" visible) → Ctrl+S → save as `tmp_{pmid}.pdf`.
+- **Gray button workaround**: when "View PDF" button is grayed out (rate limiting), navigate directly to `https://www.sciencedirect.com/science/article/pii/{PII}/pdf`. This bypasses the button and opens the PDF viewer directly.
+- **Save method**: Ctrl+S in the PDF viewer opens "另存为" dialog with pre-filled filename like `1-s2.0-{PII}-main.pdf`. Rename to `tmp_{pmid}.pdf` and click 保存. Verify "保存类型" shows "WPS PDF 文档 (*.pdf)" before clicking save.
+- **Fallback save**: if Ctrl+S fails (saves HTML or shows network error), use Ctrl+P → "Microsoft Print to PDF" → enter filename → save. This is slower but more reliable. User prefers Ctrl+S; only use Ctrl+P as fallback.
+- **Direct `pdfft` URL is unreliable** — often stalls on "Preparing to download" or hits Cloudflare. Do not rely on it.
 
 **Cloudflare strategy for speed**:
 - One CF pass per **domain** sets `cf_clearance` cookie — batch ALL papers of that domain right after passing.
@@ -205,9 +211,16 @@ for pmid, pmcid in pmc_queue:
 - **DOI list may have BOM on first line.** Strip \ufeff when reading the input file.
 - **NCBI esearch is near-100% for DOI→PMID; idconv is ~25%.** Always use esearch for DOI-only inputs (see section 1).
 
-**Non-PMC publisher download playbook (verified in production, ~35 papers downloaded):**
+**Non-PMC publisher download playbook (verified in production, 100+ papers downloaded):**
 
 The PubMed → publisher → Ctrl+S route is the most reliable for paywalled non-PMC papers. Use the **cu plane** exclusively — it carries the user's real Edge profile + institutional cookies (Zhengzhou University CARSI).
+
+**Recommended workflow order:**
+1. Process all PMC papers first (bu plane, fastest, highest success rate)
+2. Then process non-PMC papers by publisher, grouping by domain to amortize Cloudflare passes
+3. Start with ScienceDirect/Elsevier papers (largest batch, ~85% success after institutional login)
+4. Then process other publishers (Wiley, Springer, ACS, OUP, etc.)
+5. Skip no-access papers immediately (see access triage section)
 
 *Correct per-paper flow (cu plane):*
 ```python
@@ -270,10 +283,18 @@ for pmid in queue:
 6. **No-access triage**: if the page shows "Purchase PDF", "Get Access", "Subscribe", or only "Article preview" → skip immediately. Do not waste time trying.
 7. **PMCID papers go through PMC route** (section 3.5) — they are more reliable and faster.
 8. **Save dialog filename**: the pre-filled name varies by publisher. Always overwrite it with `tmp_{pmid}.pdf` before clicking save.
-9. **PDF must be fully loaded before Ctrl+S** — confirm the page shows a PDF viewer (page counter "1 / N" + toolbar) before saving. Saving from the article page produces HTML.
+9. **CRITICAL: PDF must be fully loaded before Ctrl+S** — confirm the page shows a PDF viewer (page counter "1 / N" + toolbar) before saving. Saving from the article page produces HTML. This is the #1 cause of failed SD downloads.
 10. **Verify file extension**: the save dialog's "保存类型" must show "WPS PDF 文档 (*.pdf)" or "PDF (*.pdf)". If it says "网页，全部 (*.htm;*.html)", you're on an article page, not a PDF viewer.
+11. **"Save to Zotero (PDF)" is NOT a download button** — it saves to the Zotero reference manager, not to your local disk. Do not click it.
+12. **Right-click "Save link as" also saves HTML** — for ScienceDirect's "View PDF" button, right-clicking and choosing "Save link as" saves the article HTML (filename pdfft.htm), not the actual PDF. Must open the PDF viewer first.
+13. **Direct PDF URL bypass** — when the "View PDF" button is gray (rate limiting), navigate directly to `https://www.sciencedirect.com/science/article/pii/{PII}/pdf`. This often bypasses the gray button and opens the PDF viewer directly.
+14. **DNS resolution failure** — occasionally ScienceDirect shows `DNS_PROBE_FINISHED_NXDOMAIN`. This is usually a proxy/network issue, not permanent. Retry after 30-60 seconds.
+15. **WPS Office auto-opens PDFs** — after downloading, WPS may automatically open the PDF file. This is harmless but may steal focus.
+16. **User preference: Ctrl+S first, Ctrl+P only as fallback** — the user prefers Ctrl+S "Save As" over Ctrl+P "Print to PDF". Only use Ctrl+P when Ctrl+S consistently fails (e.g., on certain PDF viewers where Ctrl+S saves HTML).
+17. **Scholarscope extension interferes** — the Scholarscope browser extension redirects PubMed to its own login page. Disable it before starting bulk downloads, or the PubMed → publisher route will fail.
+18. **ScienceDirect custom PDF viewer quirks** — Ctrl+S on the SD custom viewer (pdf.sciencedirectassets.com) sometimes saves as HTML or shows "network error". When this happens, refresh the PDF page and try again, or fall back to Ctrl+P → Microsoft Print to PDF.
 
-*Verified journal access patterns (Zhengzhou University):*
+*Verified journal access patterns (Zhengzhou University, expanded):*
 
 | Journal | Access | Download method |
 |---|---|---|
@@ -284,6 +305,30 @@ for pmid in queue:
 | Brain Behav Immun | Institutional ✓ | View PDF button → Ctrl+S |
 | Autoimmun Rev | Institutional ✓ | View PDF button → Ctrl+S |
 | J Invest Dermatol | OA ✓ | Download PDF button → Ctrl+S |
+| Int Immunopharmacol | Institutional ✓ | View PDF button → Ctrl+S |
+| Pancreatology | Institutional ✓ | View PDF button → Ctrl+S |
+| Cytokine Growth Factor Rev | Institutional ✓ | View PDF button → Ctrl+S |
+| Gynecol Obstet Fertil Senol | Institutional ✓ | View PDF button → Ctrl+S |
+| Aesthet Surg J (OUP) | Institutional ✓ | PDF button → Ctrl+S |
+| JACI (jacionline.org) | Institutional ✓ | Download PDF button → Ctrl+S |
+| JAAD (jaad.org) | Institutional ✓ | Download PDF button → Ctrl+S |
+| J Hepatol | Institutional ✓ | View PDF button → Ctrl+S |
+| Matrix Biology | Institutional ✓ | View PDF button → Ctrl+S |
+| Cancer Letters | Institutional ✓ | View PDF button → Ctrl+S |
+| Free Radic Biol Med | Institutional ✓ | View PDF button → Ctrl+S |
+| Antiviral Res | Institutional ✓ | View PDF button → Ctrl+S |
+| Mol Cell Endocrinol | Institutional ✓ | View PDF button → Ctrl+S |
+| Neuropharmacology | OA ✓ | View PDF button → Ctrl+S |
+| Semin Cancer Biol | Institutional ✓ | View PDF button → Ctrl+S |
+| Pharmacol Res | OA ✓ | View PDF button → Ctrl+S |
+| Bone | Institutional ✓ | View PDF button → Ctrl+S |
+| Gastrointest Endosc | Complimentary ✓ | View PDF button → Ctrl+S |
+| Cell Metabolism / Cell Reports | OA ✓ | Download PDF dropdown → Standard PDF → Ctrl+S |
+| Am J Pathol | OA ✓ | Download PDF button → Ctrl+S |
+| J Mol Cell Cardiol | OA ✓ | Download PDF button → Ctrl+S |
+| J Med Chem | PMC ✓ | PMC route → Ctrl+S |
+| Biodivers Data J | PMC ✓ | PMC route → Ctrl+S |
+| Clin Exp Otorhinolaryngol | PMC ✓ | PMC route → Ctrl+S |
 | JACC Cardiovasc Interv | OA ✓ | PDF button → **download icon** (not Ctrl+S) |
 | Toxins (MDPI) | OA ✓ | PMC route → Ctrl+S |
 | Pediatr Radiol | OA ✓ | PMC route → Ctrl+S |
@@ -294,6 +339,15 @@ for pmid in queue:
 | Int J Cardiol | ✗ No access | "Get Access" → skip |
 | Curr Protoc (Wiley) | ✗ No access | "Get access to full version" → skip |
 | Radiol Technol | ✗ No full text | No full-text links on PubMed → skip |
+| J Heart Lung Transplant | ✗ No access | Only "Article preview" → skip |
+| AJO (ajo.com) | ✗ No access | "Get full text access" → skip |
+| JHLT (jhltonline.org) | ✗ No access | "Get Access" → skip |
+| AACR (aacrjournals.org) | ✗ No access | Redirects to abstract → skip |
+| Military Medicine (OUP) | ✗ No access | "Get access" → skip |
+| J Appl Microbiol (OUP) | ✗ No access | "Get access" → skip |
+| PM R (Wiley) | ✗ No access | "Zhengzhou University does not provide access" → skip |
+| SAGE Publications | ✗ Connection timeout | Unreachable → skip |
+| J-STAGE | ✗ Page load failure | Unreachable → skip |
 
 ### 3.6 Fallback: Scholarscope + Sci-Hub route (cu plane, verified)
 
