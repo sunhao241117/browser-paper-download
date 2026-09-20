@@ -359,33 +359,33 @@ for pmid in queue:
 | Radiol Technol | ✗ No full text | No full-text links on PubMed → skip |
 | J Heart Lung Transplant (JHLT) | ✗ No access | Only "Article preview" → skip |
 | AJO (ajo.com) | ✗ No access | "Get full text access" → skip |
-| AACR (aacrjournals.org) | ✗ No access | Redirects to abstract → skip |
+| AACR (aacrjournals.org) | ✗ No institutional access | 无机构访问权限 → **但通过 Sci-Hub 可下载！** |
 | Blood (ScienceDirect) | Institutional ✓ | View PDF button → Ctrl+S (已验证多篇可下载) |
 | Blood/ASH PMC 作者手稿 | ✗ No PDF button | PMC无Download PDF按钮 → skip（注意：仅PMC作者手稿记录，非Blood期刊本身） |
-| Cancer Research (AACR) | ✗ No access | 无机构访问权限 → skip |
-| Clinical Cancer Research (AACR) | ✗ No access | 无机构访问权限 → skip |
-| Cardiovasc Res (OUP) | ✗ No access | 无机构访问权限 → skip |
-| SAGE Publications (journals.sagepub.com) | ✗ Connection timeout | Unreachable → skip |
+| Cancer Research (AACR) | ✗ No institutional access | 无机构访问权限 → **但通过 Sci-Hub 可下载！** |
+| Clinical Cancer Research (AACR) | ✗ No institutional access | 无机构访问权限 → **但通过 Sci-Hub 可下载！** |
+| Cardiovasc Res (OUP) | ✗ No access | 无机构访问权限 → **但通过 Sci-Hub 可能可下载** |
+| SAGE Publications (journals.sagepub.com) | ✗ Connection timeout | Unreachable → **但通过 Sci-Hub 可下载！** |
 | J-STAGE | ✗ Page load failure | Unreachable → skip |
-| Military Medicine (OUP) | ✗ No access | "Get access" → skip |
-| J Appl Microbiol (OUP) | ✗ No access | "Get access" → skip |
-| Br J Dermatol (OUP) | ✗ No access | "Get access" → skip |
-| Endocrine Reviews (OUP) | ✗ No access | "Get access" → skip |
-| silverchair.com (OUP PDF viewer) | ✗ Frequent timeout | ERR_TIMED_OUT → skip |
-| PM R (Wiley) | ✗ No access | "Zhengzhou University does not provide access" → skip |
-| JASN (Wolters Kluwer) | ✗ No access | 只有个人订阅登录，无机构访问选项 → skip |
-| ARD (BMJ) | ✗ No access | 需要个人登录 → skip |
-| Chest (Elsevier) | ✗ No PDF button | 机构登录成功但找不到PDF下载按钮 → skip |
-| Nature Medicine | ✗ No access | "Access is not available" → skip |
-| Nature Immunology | ✗ No access | "Access is not available" → skip |
-| Nature Metabolism | ✗ No access | "Access is not available" → skip |
-| Inflammation (Springer) | ✗ No access | 需付费 $39.95 → skip |
-| Springer (部分期刊) | ✗ No access | 需付费 → skip |
-| IEEE Xplore | ✗ PDF download failed | PDF查看器Ctrl+S保存HTML，打印预览失败 → skip |
-| 西班牙期刊 (actasdermo.org) | ✗ PDF viewer incompatible | 在线PDF查看器不兼容，Ctrl+S保存HTML → skip |
-| CORE (core.ac.uk) | ✗ 410 error | FREE PDF链接返回410错误 → skip |
+| Military Medicine (OUP) | ✗ No access | "Get access" → **但通过 Sci-Hub 可能可下载** |
+| J Appl Microbiol (OUP) | ✗ No access | "Get access" → **但通过 Sci-Hub 可能可下载** |
+| Br J Dermatol (OUP) | ✗ No institutional access | 无机构访问权限 → **但通过 Sci-Hub 可下载！** |
+| Endocrine Reviews (OUP) | ✗ No institutional access | 无机构访问权限 → **但通过 Sci-Hub 可下载！** |
+| silverchair.com (OUP PDF viewer) | ✗ Frequent timeout | ERR_TIMED_OUT → **但通过 Sci-Hub 可下载！** |
+| PM R (Wiley) | ✗ No access | "Zhengzhou University does not provide access" → **但通过 Sci-Hub 可能可下载** |
+| JASN (Wolters Kluwer) | ✗ No access | 只有个人订阅登录，无机构访问选项 → **但通过 Sci-Hub 可能可下载** |
+| ARD (BMJ) | ✗ No access | 需要个人登录 → **但通过 Sci-Hub 可能可下载** |
+| Chest (Elsevier) | ✗ No PDF button | 机构登录成功但找不到PDF下载按钮 → **但通过 Sci-Hub 可能可下载** |
+| Nature Medicine | ✗ No access | "Access is not available" → 2022+ Sci-Hub 未收录 |
+| Nature Immunology | ✗ No access | "Access is not available" → 2022+ Sci-Hub 未收录 |
+| Nature Metabolism | ✗ No access | "Access is not available" → 2022+ Sci-Hub 未收录 |
+| Inflammation (Springer) | ✗ No access | 需付费 $39.95 → **但通过 Sci-Hub 可能可下载** |
+| Springer (部分期刊) | ✗ No access | 需付费 → **但通过 Sci-Hub 可能可下载** |
+| IEEE Xplore | ✗ PDF download failed | PDF查看器Ctrl+S保存HTML，打印预览失败 → **但通过 Sci-Hub 可能可下载** |
+| 西班牙期刊 (actasdermo.org) | ✗ PDF viewer incompatible | 在线PDF查看器不兼容，Ctrl+S保存HTML → **但通过 Sci-Hub 可能可下载** |
+| CORE (core.ac.uk) | ✗ 410 error | FREE PDF链接返回410错误 → **但通过 Sci-Hub 可能可下载** |
 | JACC (jacc.org) | ⚠️ Special | PDF查看器Ctrl+S保存HTML，需点击右上角下载图标 |
-| AJRCCM 部分非OA文章 | ✗ No access | 部分文章无权限 → skip |
+| AJRCCM 部分非OA文章 | ✗ No institutional access | 部分文章无权限 → **但通过 Sci-Hub 大部分可下载！** |
 
 **PMC 无 Download PDF 按钮的文章（已全部验证跳过）：**
 PMC13307560, PMC4911861, PMC4911864, PMC5314813, PMC2713467, PMC2572797, PMC1895193, PMC3031477, PMC2442740, PMC6456995, PMC4285539
@@ -428,6 +428,7 @@ PMC13307560, PMC4911861, PMC4911864, PMC5314813, PMC2713467, PMC2572797, PMC1895
 5. **PDF 必须完全加载后再 Ctrl+S**，这是最容易出错的步骤
 6. **全部处理完才能停止**，已知无权限期刊除外
 7. **所有权限提示自动批准**，不询问人工
+8. **2021年及之前的文献优先尝试 Sci-Hub** — 对于通过出版商路线找不到 PDF 的文献，如果发表年份 ≤ 2021 年，可以尝试通过 Sci-Hub 获取（Scholarscope 插件自动解析 Sci-Hub 镜像）。2022 年及之后的文献 Sci-Hub 通常未收录，无需尝试。
 
 ### 3.6 Fallback: Scholarscope + Sci-Hub route (cu plane, verified)
 
@@ -455,10 +456,70 @@ When the publisher site shows no institutional access (purchase wall, "Get Acces
 - Click 保存 (button at ~(650, 585) at 1920×1080). Do NOT change the filename — rename later after verification.
 - File lands in `C:\Users\sunhao\Downloads\`. Move it immediately to the target directory as `PMID_<pmid>.pdf`.
 
-**Sci-Hub mirror availability**:
-- `sci-hub.red` — often works, but may return 502 Bad Gateway under load.
-- `sci-hub.se` — often returns ERR_CONNECTION_CLOSED from China networks.
-- **Let Scholarscope pick the mirror** — it auto-rotates. Do not hardcode a Sci-Hub domain in the URL.
+**Sci-Hub mirror availability (verified from China, 2026-09):**
+- ✅ **`www.sci-hub.st`** — **当前可用镜像**，需人机验证（点击"不是"按钮）
+- ❌ `sci-hub.se` — ERR_CONNECTION_CLOSED（从中国网络访问失败）
+- ❌ `sci-hub.red` — 502 Bad Gateway（服务器过载）
+- **Direct URL format**: `https://www.sci-hub.st/{doi}`（不需要 Scholarscope 插件，直接访问即可）
+
+**Direct Sci-Hub download flow (cu plane, verified, 9/12 success rate):**
+
+当 Scholarscope 插件不可用或需要直接批量下载时，可以直接通过 `www.sci-hub.st` 访问：
+
+*Per-paper flow (~40-45 s/paper):*
+```python
+import seed_computer_use as cu, os, shutil, time
+
+DST = r"C:\...\target"
+DL = os.path.join(os.environ["USERPROFILE"], "Downloads")
+for pmid, doi in scihub_queue:
+    dst = os.path.join(DST, f"PMID_{pmid}.pdf")
+    if os.path.exists(dst):
+        continue  # skip already downloaded
+
+    # 1. Navigate directly to Sci-Hub with DOI
+    cu.click(200, 55); cu.hotkey("ctrl", "a")
+    cu.type(f"https://www.sci-hub.st/{doi}")
+    cu.hotkey("enter"); time.sleep(12)
+    cu.screenshot()
+
+    # 2. If human verification appears: click "不是" button (~(100, 380))
+    #    If "尚未收录在数据库中" appears → skip to next paper
+
+    # 3. If article page appears: click download button (down arrow icon, bottom-right, ~(860, 910))
+    cu.click(860, 910); time.sleep(10)  # adjust based on screenshot
+    cu.screenshot()
+
+    # 4. PDF opens in Edge native viewer → Ctrl+S to save
+    cu.hotkey("ctrl", "s"); time.sleep(5)
+    cu.screenshot()  # confirm "另存为" dialog appeared
+
+    # 5. Rename file: tmp_{pmid}.pdf, then click 保存
+    cu.click(150, 405); cu.hotkey("ctrl", "a")
+    cu.type(f"tmp_{pmid}.pdf")
+    cu.click(525, 470); time.sleep(15)  # 保存 button
+
+    # 6. Verify %PDF- magic bytes, then move to destination
+    pdf_file = os.path.join(DL, f"tmp_{pmid}.pdf")
+    if os.path.exists(pdf_file):
+        with open(pdf_file, "rb") as f:
+            if f.read(5) == b"%PDF-":
+                shutil.move(pdf_file, dst)
+                print(f"  OK: {pmid} ({os.path.getsize(dst)//1024} KB)")
+                continue
+    print(f"  SKIP {pmid}: Sci-Hub not available")
+```
+
+*Key findings from production testing (9/12 success rate):*
+1. **之前认为"无权限"的期刊，通过 Sci-Hub 大部分都可以下载！** 包括：
+   - ✅ AACR 系列（Cancer Research, Clinical Cancer Research）
+   - ✅ OUP 系列（Br J Dermatol, AJRCCM, Endocrine Reviews）
+   - ✅ SAGE 系列（J Dent Res）
+2. **部分 AJRCCM 2005-2006 年的文章未被收录**（连续3篇都没有），不是所有老文章都有
+3. **Sci-Hub 对 2021 年之前的文章覆盖率很高**，但不是 100%
+4. **连接被关闭时刷新页面即可恢复**（ERR_CONNECTION_CLOSED → 刷新 → 正常）
+5. **下载按钮位置随页面变化** — 每次都要重新截图定位右下角的向下箭头图标
+6. **PDF 在 Edge 原生查看器中打开后再 Ctrl+S** — 保存的才是真正的 PDF
 
 **Deduplication before batch**:
 - If a previous download directory exists (e.g. `代谢` folder with 30+ renamed PDFs), match new papers by **title keywords** (journal abbreviation + first author surname + title fragment) and copy already-downloaded files instead of re-downloading. This can save 30–50% of batch time for related topic sets.
