@@ -360,7 +360,11 @@ for pmid in queue:
 | J Heart Lung Transplant (JHLT) | ✗ No access | Only "Article preview" → skip |
 | AJO (ajo.com) | ✗ No access | "Get full text access" → skip |
 | AACR (aacrjournals.org) | ✗ No access | Redirects to abstract → skip |
-| Blood/ASH 系列 (作者手稿) | ✗ No PDF button | PMC无Download PDF按钮 → skip |
+| Blood (ScienceDirect) | Institutional ✓ | View PDF button → Ctrl+S (已验证多篇可下载) |
+| Blood/ASH PMC 作者手稿 | ✗ No PDF button | PMC无Download PDF按钮 → skip（注意：仅PMC作者手稿记录，非Blood期刊本身） |
+| Cancer Research (AACR) | ✗ No access | 无机构访问权限 → skip |
+| Clinical Cancer Research (AACR) | ✗ No access | 无机构访问权限 → skip |
+| Cardiovasc Res (OUP) | ✗ No access | 无机构访问权限 → skip |
 | SAGE Publications (journals.sagepub.com) | ✗ Connection timeout | Unreachable → skip |
 | J-STAGE | ✗ Page load failure | Unreachable → skip |
 | Military Medicine (OUP) | ✗ No access | "Get access" → skip |
@@ -385,7 +389,45 @@ for pmid in queue:
 
 **PMC 无 Download PDF 按钮的文章（已全部验证跳过）：**
 PMC13307560, PMC4911861, PMC4911864, PMC5314813, PMC2713467, PMC2572797, PMC1895193, PMC3031477, PMC2442740, PMC6456995, PMC4285539
-（以上均为Blood/ASH作者手稿记录，PMC页面无Download PDF按钮）
+（以上均为Blood/ASH作者手稿记录，PMC页面无Download PDF按钮。注意：这只是PMC上的作者手稿记录，Blood期刊本身通过ScienceDirect是有权限的！）
+
+**515篇文献批量下载最终成果总结（CXCL10/CXCR3项目，Zhengzhou University）：**
+
+*整体成功率：366/515 = 71.1%*
+
+**按下载渠道统计：**
+1. **PMC 开放获取路线：192 篇成功**（成功率 ~95%）
+   - 流程：PubMed → 点击 PMC 链接 → 文章页 → 点击 "Download PDF" → 验证 %PDF- 头
+   - 失败：11篇 Blood/ASH 作者手稿无 Download PDF 按钮
+
+2. **Elsevier/ScienceDirect 机构访问：~150 篇成功**（成功率 ~85%）
+   - 流程：PubMed → 点击 Elsevier 全文链接 → Cloudflare 验证 → 郑州大学 CARSI 机构登录 → View PDF → Ctrl+S 保存
+   - 已验证可下载的Elsevier期刊：J Ethnopharmacol, Biochem Pharmacol, Cell Signal, Curr Opin Immunol, Brain Behav Immun, Autoimmun Rev, Int Immunopharmacol, Pancreatology, Cytokine Growth Factor Rev, JACI, JAAD, J Hepatol, Matrix Biology, Cancer Letters, Free Radic Biol Med, Antiviral Res, Mol Cell Endocrinol, Neuropharmacology, Semin Cancer Biol, Pharmacol Res, Bone, Blood 等
+
+3. **其他 OA 期刊：~24 篇成功**
+   - IOVS (ARVO), Cell Metabolism, Cell Reports, Am J Pathol, J Med Chem, Toxins (MDPI) 等
+
+**未成功下载的 149 篇原因分类：**
+- AACR 系列（Cancer Research, Clinical Cancer Research）：~20篇
+- OUP 系列（AJRCCM, Br J Dermatol, Cardiovasc Res, Endocrine Reviews）：~30篇
+- Wolters Kluwer（JASN）：~15篇
+- SAGE Publications（J Dent Res）：~10篇
+- BMJ（ARD）：~10篇
+- Nature 主刊（Nature Medicine, Nature Immunology, Nature Metabolism）：~16篇
+- Chest（无机构访问）：~5篇
+- J Heart Lung Transplant（无访问权限）：~5篇
+- Blood/ASH PMC 作者手稿（无 Download PDF 按钮）：~11篇
+- 不相关文章（厌氧消化、儿童发育等）：~15篇
+- 不存在的 PMID / 日语文章等：~12篇
+
+**批量下载最佳实践（从515篇项目总结）：**
+1. **下载顺序：PMC优先 → Elsevier其次 → 其他期刊最后**
+2. **已知无权限期刊直接跳过**，不要浪费时间重复尝试
+3. **机构登录状态保持**：一次 CARSI 登录可覆盖整批 Elsevier 文章
+4. **保存时必须验证 .pdf 后缀**，不是 .html 才是正确的
+5. **PDF 必须完全加载后再 Ctrl+S**，这是最容易出错的步骤
+6. **全部处理完才能停止**，已知无权限期刊除外
+7. **所有权限提示自动批准**，不询问人工
 
 ### 3.6 Fallback: Scholarscope + Sci-Hub route (cu plane, verified)
 
